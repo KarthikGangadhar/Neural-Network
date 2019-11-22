@@ -10,7 +10,7 @@ import numpy as np
 import keras
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
-from keras.layers import Conv2D, MaxPooling2D
+from keras.layers import Conv2D, MaxPooling2D, InputLayer
 
 class CNN(object):
     def __init__(self):
@@ -19,7 +19,6 @@ class CNN(object):
         
         """
         self.model = Sequential()
-        self.input = None
 
     def add_input_layer(self, shape=(2,),name="" ):
         """
@@ -29,18 +28,14 @@ class CNN(object):
          :param name: Layer name (string)
          :return: None
          """
+        if shape.__class__ != tuple and shape.__class__ == int:
+            shape = (shape,)
+
         if self.model is None:
             self.model = Sequential()
 
-        self.input = keras.layers.Input(shape=shape, name=name)
-        # self.model.
-        add(Conv2D(input_shape=shape, name=name))
-        # x = layers.Conv2D(64, (3, 3),
-                    #   activation='relu',
-                    #   padding='same',
-                    #   name='block1_conv1')(img_input)
-        # print("")
-        pass
+        self.input_shape = shape
+        self.model.add(InputLayer(input_shape=shape, name=name))
 
     def append_dense_layer(self, num_nodes,activation="relu",name="",trainable=True):
         """
@@ -52,7 +47,7 @@ class CNN(object):
          :param trainable: Boolean
          :return: None
          """
-        pass
+        self.model.add(Dense(units = num_nodes, activation=activation, name= name, trainable= trainable))
 
     def append_conv2d_layer(self, num_of_filters, kernel_size=3, padding='same', strides=1,
                          activation="Relu",name="",trainable=True):
@@ -68,8 +63,7 @@ class CNN(object):
          :param trainable: Boolean
          :return: Layer object
          """
-        self.model.add()
-        pass
+        self.model.add(Conv2D(num_of_filters, kernel_size, input_shape=self.input_shape, padding=padding, name=name, strides = strides, activation=activation, trainable=trainable))
 
     def append_maxpooling2d_layer(self, pool_size=2, padding="same", strides=2,name=""):
         """
@@ -80,7 +74,7 @@ class CNN(object):
          :param name: Layer name (string)
          :return: Layer object
          """
-        pass
+        self.model.add(MaxPooling2D(pool_size = pool_size, strides=strides,padding = padding, name=name)) 
 
     def append_flatten_layer(self,name=""):
         """
@@ -88,7 +82,7 @@ class CNN(object):
          :param name: Layer name (string)
          :return: Layer object
          """
-        pass
+        self.model.add(Flatten(name=name)) 
 
     def set_training_flag(self,layer_numbers=[],layer_names="",trainable_flag=True):
         """
@@ -98,7 +92,8 @@ class CNN(object):
         :param trainable_flag: Set trainable flag
         :return: None
         """
-        pass
+        for num in layer_numbers:
+            self.model.layers[num].trainable = trainable_flag 
 
     def get_weights_without_biases(self,layer_number=None,layer_name=""):
         """
@@ -110,7 +105,10 @@ class CNN(object):
          :return: Weight matrix for the given layer (not including the biases). If the given layer does not have
           weights then None should be returned.
          """
-        pass
+        if layer_number != None and layer_number != 0:
+            return self.model.layers[layer_number-1].weights[0]
+        else:
+            return None
 
     def get_biases(self,layer_number=None,layer_name=""):
         """
@@ -121,7 +119,10 @@ class CNN(object):
          :param layer_name: Layer name (if both layer_number and layer_name are specified, layer number takes precedence).
          :return: biases for the given layer (If the given layer does not have bias then None should be returned)
          """
-        pass
+        if layer_number != None and layer_number != 0:
+            return self.model.layers[layer_number-1].bias
+        else:
+            return None
 
     def set_weights_without_biases(self,weights,layer_number=None,layer_name=""):
         """
@@ -134,7 +135,8 @@ class CNN(object):
          :param layer_name: Layer name (if both layer_number and layer_name are specified, layer number takes precedence).
          :return: None
          """
-        pass
+        if layer_number != None and layer_number != 0:
+            self.model.layers[layer_number-1].weights.append(weights) 
 
     def set_biases(self,biases,layer_number=None,layer_name=""):
         """
@@ -211,7 +213,12 @@ class CNN(object):
         :param X: Input tensor.
         :return: Output tensor.
         """
-        pass
+        # self.model.compile(loss='binary_crossentropy', optimizer='adam')
+        # self.model.fit(X, y, epochs=200, verbose=0)
+        output = self.model.predict(X)
+        return output
+        # print("")
+        # pass
 
 
     def evaluate(self,X,y):
