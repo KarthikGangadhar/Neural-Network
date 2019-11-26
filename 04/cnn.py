@@ -8,7 +8,9 @@
 import tensorflow as tf
 import numpy as np
 import keras
-from keras.models import Sequential
+from keras.models import Sequential, load_model
+from keras.applications.vgg16 import VGG16
+from keras.applications.vgg19 import VGG19
 from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D, InputLayer
 
@@ -19,6 +21,7 @@ class CNN(object):
         
         """
         self.model = Sequential()
+        self.builtIn = True
 
     def add_input_layer(self, shape=(2,),name="" ):
         """
@@ -28,6 +31,7 @@ class CNN(object):
          :param name: Layer name (string)
          :return: None
          """
+        self.builtIn = False 
         if shape.__class__ != tuple and shape.__class__ == int:
             shape = (shape,)
 
@@ -47,8 +51,10 @@ class CNN(object):
          :param trainable: Boolean
          :return: None
          """
-        self.model.add(Dense(units = num_nodes, activation=activation, name= name, trainable= trainable))
-
+        if self.builtIn:
+            self.model.layers.append(Dense(units = num_nodes, activation=activation, name= name, trainable= trainable))
+        else:
+            self.model.add(Dense(units = num_nodes, activation=activation, name= name, trainable= trainable))
     def append_conv2d_layer(self, num_of_filters, kernel_size=3, padding='same', strides=1,
                          activation="Relu",name="",trainable=True):
         """
@@ -105,9 +111,14 @@ class CNN(object):
          :return: Weight matrix for the given layer (not including the biases). If the given layer does not have
           weights then None should be returned.
          """
-        if layer_number != None and layer_number != 0:
+        if layer_number != None and layer_number > 0:
             return self.model.layers[layer_number-1].weights[0]
-        else:
+        elif layer_number == -1:
+            return self.model.layers[layer_number].weights[0]
+        elif layer_name:
+            for layer in self.model.layers:
+                if layer.name == layer_name:
+                    return layer.weights[0]
             return None
 
     def get_biases(self,layer_number=None,layer_name=""):
@@ -166,8 +177,13 @@ class CNN(object):
          model_file_name are specified, model_name takes precedence).
         :return: model
         """
-        pass
-
+        if (model_name == "VGG16"):
+            self.model = VGG16() 
+        elif(model_name == "VGG19"):
+            self.model = VGG19()
+        elif model_file_name:
+            self.model = load_model(model_file_name)
+            
 
     def save_model(self,model_file_name=""):
         """
