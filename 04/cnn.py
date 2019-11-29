@@ -118,7 +118,10 @@ class CNN(object):
         elif layer_name:
             for layer in self.model.layers:
                 if layer.name == layer_name:
-                    return layer.weights[0]
+                    if (len(layer.weights) > 0):
+                       return layer.weights[0]
+                    else:
+                       return None    
             return None
 
     def get_biases(self,layer_number=None,layer_name=""):
@@ -191,7 +194,7 @@ class CNN(object):
         :param file_name: Name of file to save the model.
         :return: model
         """
-        pass
+        self.model.save(model_file_name)
 
 
     def set_loss_function(self, loss="SparseCategoricalCrossentropy"):
