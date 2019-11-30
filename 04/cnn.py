@@ -9,6 +9,7 @@ import tensorflow as tf
 import numpy as np
 import keras
 from keras.models import Sequential, load_model
+from keras import optimizers
 from keras.applications.vgg16 import VGG16
 from keras.applications.vgg19 import VGG19
 from keras.layers import Dense, Dropout, Activation, Flatten
@@ -112,9 +113,11 @@ class CNN(object):
           weights then None should be returned.
          """
         if layer_number != None and layer_number > 0:
-            return self.model.layers[layer_number-1].weights[0]
+            if len(self.model.layers[layer_number].weights) > 0:
+                return self.model.layers[layer_number].weights[0]
         elif layer_number == -1:
-            return self.model.layers[layer_number].weights[0]
+            if len(self.model.layers[layer_number].weights) > 0:
+                return self.model.layers[layer_number].weights[0]
         elif layer_name:
             for layer in self.model.layers:
                 if layer.name == layer_name:
@@ -169,7 +172,8 @@ class CNN(object):
         This function removes a layer from the model.
         :return: removed layer
         """
-        pass
+        last_layer = self.model.layers.pop()
+        return last_layer
 
     def load_a_model(self,model_name="",model_file_name=""):
         """
@@ -196,7 +200,6 @@ class CNN(object):
         """
         self.model.save(model_file_name)
 
-
     def set_loss_function(self, loss="SparseCategoricalCrossentropy"):
         """
         This function sets the loss function.
@@ -204,7 +207,14 @@ class CNN(object):
         "SparseCategoricalCrossentropy",  "MeanSquaredError", "hinge".
         :return: none
         """
-        pass
+        self.loss_function = None
+        if "SparseCategoricalCrossentropy":
+            self.loss_function = loss
+        elif "MeanSquaredError":
+            self.loss_function = loss
+        elif "hinge":
+            self.loss_function = loss
+        print("loss_function : {0}".format(self.loss_function))        
 
     def set_metric(self,metric):
         """
@@ -213,7 +223,12 @@ class CNN(object):
         "accuracy", "mse".
         :return: none
         """
-        pass
+        self.metric = None
+        if "accuracy":
+            self.metric = metric
+        elif "mse":
+            self.metric = metric
+        print("metric : {0}".format(self.metric))
 
     def set_optimizer(self,optimizer="SGD",learning_rate=0.01,momentum=0.0):
         """
@@ -224,7 +239,14 @@ class CNN(object):
         :param momentum: Momentum
         :return: none
         """
-        pass
+        self.optimizer = None
+        if "RMSprop":
+            self.optimizer = optimizers.RMSprop(lr=learning_rate)
+        elif "SGD":
+            self.optimizer = optimizers.SGD(lr=learning_rate, momentum=momentum)
+        elif "Adagrad":
+            self.optimizer = 'Adagrad'
+        print("Optimizer : {0}".format(self.optimizer))
 
     def predict(self, X):
         """
@@ -232,12 +254,8 @@ class CNN(object):
         :param X: Input tensor.
         :return: Output tensor.
         """
-        # self.model.compile(loss='binary_crossentropy', optimizer='adam')
-        # self.model.fit(X, y, epochs=200, verbose=0)
         output = self.model.predict(X)
         return output
-        # print("")
-        # pass
 
 
     def evaluate(self,X,y):
@@ -247,7 +265,8 @@ class CNN(object):
          :param y: Array of desired (target) outputs
          :return: loss value and metric value
          """
-        pass
+        test_loss, test_acc = self.model.evaluate(X, y, verbose=2) 
+        return (test_loss, test_acc)
 
     def train(self, X_train, y_train, batch_size, num_epochs):
         """
@@ -261,7 +280,8 @@ class CNN(object):
          :param num_epochs: Number of times training should be repeated over all input data
          :return: list of loss values. Each element of the list should be the value of loss after each epoch.
          """
-        pass
+        seqModel = self.model.fit(x=X_train, y=y_train, batch_size=batch_size, epochs = num_epochs)
+        return seqModel.history['loss']
 
 if __name__ == "__main__":
 
