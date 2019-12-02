@@ -11,6 +11,7 @@ import tensorflow.keras as keras
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.layers import Dense, Flatten, InputLayer
 from tensorflow.keras.layers import Conv2D, MaxPooling2D
+from tensorflow.keras import optimizers
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.applications.vgg19 import VGG19
 from tensorflow.keras.applications.vgg16 import VGG16
@@ -53,7 +54,7 @@ class CNN(object):
         self.model.add(Dense(units = num_nodes, activation=activation, name= name, trainable= trainable))
     
     def append_conv2d_layer(self, num_of_filters, kernel_size=3, padding='same', strides=1,
-                         activation="Relu",name="",trainable=True):
+                         activation="Relu",name="",trainable=True, input_shape = None):
         """
          This function adds a conv2d layer to the neural network
          :param num_of_filters: Number of nodes
@@ -66,7 +67,11 @@ class CNN(object):
          :param trainable: Boolean
          :return: Layer object
          """
-        conv2D_layer = Conv2D(num_of_filters, kernel_size=kernel_size, padding=padding, name=name, strides = strides, activation=activation, trainable=trainable)
+        if input_shape != None:
+            conv2D_layer = Conv2D(num_of_filters, kernel_size=kernel_size, padding=padding, name=name, strides = strides, activation=activation, trainable=trainable, input_shape = input_shape)
+        else:
+            conv2D_layer = Conv2D(num_of_filters, kernel_size=kernel_size, padding=padding, name=name, strides = strides, activation=activation, trainable=trainable)
+
         self.model.add(conv2D_layer)
         return conv2D_layer
 
@@ -224,7 +229,8 @@ class CNN(object):
             self.loss_function = loss
         elif "hinge":
             self.loss_function = loss
-        print("loss_function : {0}".format(self.loss_function))        
+        else:
+            self.loss_function = loss 
 
     def set_metric(self,metric):
         """
@@ -235,10 +241,9 @@ class CNN(object):
         """
         self.metric = None
         if "accuracy":
-            self.metric = metric
+            self.metric = ['acc']
         elif "mse":
             self.metric = metric
-        print("metric : {0}".format(self.metric))
 
     def set_optimizer(self,optimizer="SGD",learning_rate=0.01,momentum=0.0):
         """
@@ -290,9 +295,10 @@ class CNN(object):
          :param num_epochs: Number of times training should be repeated over all input data
          :return: list of loss values. Each element of the list should be the value of loss after each epoch.
          """
+        self.model.compile(optimizer= self.optimizer, loss = self.loss_function, metrics = self.metric) 
         seqModel = self.model.fit(x=X_train, y=y_train, batch_size=batch_size, epochs = num_epochs)
         return seqModel.history['loss']
-
+        
 if __name__ == "__main__":
 
     my_cnn=CNN()

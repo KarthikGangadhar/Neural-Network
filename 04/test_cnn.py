@@ -5,7 +5,7 @@
 import pytest
 import numpy as np
 from cnn import CNN
-# from untitled import CNN
+import tensorflow.keras as keras
 import os
 
 
@@ -256,6 +256,47 @@ def test_remove_last_layer():
     my_cnn.remove_last_layer()
     out = my_cnn.predict(X_train)
     assert out.shape==(number_of_train_samples_to_use,10)
+
+def test_train_and_evaluate():
+    from tensorflow.keras.datasets import cifar10
+    batch_size = 32
+    num_classes = 10
+    epochs = 1
+    save_dir = os.path.join(os.getcwd(), 'saved_models')
+    model_name = 'keras_cifar10_trained_model.h5'
+    (train_images, train_labels), (test_images, test_labels) = cifar10.load_data()
+    train_labels = keras.utils.to_categorical(train_labels, num_classes)
+    test_labels = keras.utils.to_categorical(test_labels, num_classes)
+
+    my_cnn=CNN()
+
+    my_cnn.append_conv2d_layer(num_of_filters=32, kernel_size=(3,3),padding="same", activation='relu', name="conv1", input_shape = train_images.shape[1:])
+    # my_cnn.append_conv2d_layer(num_of_filters=32, kernel_size=(3,3),padding="same", activation='relu', name="conv2")
+    my_cnn.append_maxpooling2d_layer(pool_size=2, padding="same", strides=2, name="pool1")
+
+    # my_cnn.append_conv2d_layer(num_of_filters=64, kernel_size=(3,3),padding="same", activation='relu', name="conv3")
+    my_cnn.append_conv2d_layer(num_of_filters=64, kernel_size=(3,3),padding="same", activation='relu', name="conv4")
+    my_cnn.append_maxpooling2d_layer(pool_size=2, padding="same", strides=2, name="pool2")
+
+    my_cnn.append_flatten_layer(name="flat1")
+    # my_cnn.append_dense_layer(num_nodes=512,activation="relu",name="dense1")
+    my_cnn.append_dense_layer(num_nodes=10,activation="softmax",name="dense2")
+
+    my_cnn.set_metric('accuracy')
+    my_cnn.set_optimizer('RMSprop')
+    my_cnn.set_loss_function('categorical_crossentropy')
+    loss = my_cnn.train(train_images, train_labels, batch_size, epochs)
+    
+    path = os.getcwd()
+    file_path=os.path.join(path,model_name)
+    my_cnn.save_model(model_file_name=file_path)
+    
+    print("loss :{0}".format(loss))
+    assert len(loss) == 1
+
+    test_loss, test_acc = my_cnn.evaluate(test_images,  test_labels)
+    assert test_loss < 5 
+    assert test_acc < 1
 
 if __name__ == "__main__":
     test_add_input_layer()
