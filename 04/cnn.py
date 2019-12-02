@@ -128,8 +128,11 @@ class CNN(object):
             elif(layer_number < 0):
                 return self.model.get_layer(index = layer_number).get_weights()[0]
         elif(layer_name != ""):
-            if(self.model.get_layer(name=layer_name).count_params() != 0):
-                return self.model.get_layer(name = layer_name).get_weights()[0]
+            try:
+                if(self.model.get_layer(name=layer_name) != None and self.model.get_layer(name=layer_name).count_params() != 0):
+                    return self.model.get_layer(name = layer_name).get_weights()[0]
+            except:
+                return None
 
         return None
         
@@ -193,9 +196,6 @@ class CNN(object):
         This function removes a layer from the model.
         :return: removed layer
         """
-        # layer=self.model.get_layer(index=-1)
-        # self. model= Sequential(self.model.layers[:-1])
-        # return layer
         layer=self.model._layers.pop()
         self.model= Model(self.model.input,self.model.layers[-1].output)
         return layer
