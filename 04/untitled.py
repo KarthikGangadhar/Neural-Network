@@ -45,7 +45,9 @@ class CNN(object):
          :return: None
          """
         
-        self.model.add(Dense(input_shape=shape,name=name))
+        # self.model.add(Dense(input_shape=shape,name=name))
+        self.model.add(InputLayer(input_shape=shape, name=name))
+
          
 
 

@@ -5,6 +5,7 @@
 import pytest
 import numpy as np
 from cnn import CNN
+# from untitled import CNN
 import os
 
 
@@ -278,11 +279,11 @@ if __name__ == "__main__":
 #     test_get_biases_2()
 #     print("test_get_biases_2()")
 #     test_set_weights_without_biases()
-    print("test_set_weights_without_biases()")
-    test_load_and_save_model()
-    print("test_load_and_save_model()")
-    test_predict()
-    print("test_predict()")
+    # print("test_set_weights_without_biases()")
+    # test_load_and_save_model()
+    # print("test_load_and_save_model()")
+    # test_predict()
+    # print("test_predict()")
     test_remove_last_layer()                                                
     print("test_remove_last_layer()")
 

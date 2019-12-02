@@ -22,7 +22,6 @@ class CNN(object):
         
         """
         self.model = Sequential()
-        self.builtIn = True
 
     def add_input_layer(self, shape=(2,),name="" ):
         """
@@ -52,10 +51,8 @@ class CNN(object):
          :param trainable: Boolean
          :return: None
          """
-        if self.builtIn:
-            self.model.layers.append(Dense(units = num_nodes, activation=activation, name= name, trainable= trainable))
-        else:
-            self.model.add(Dense(units = num_nodes, activation=activation, name= name, trainable= trainable))
+        self.model.add(Dense(units = num_nodes, activation=activation, name= name, trainable= trainable))
+    
     def append_conv2d_layer(self, num_of_filters, kernel_size=3, padding='same', strides=1,
                          activation="Relu",name="",trainable=True):
         """
@@ -70,7 +67,7 @@ class CNN(object):
          :param trainable: Boolean
          :return: Layer object
          """
-        self.model.add(Conv2D(num_of_filters, kernel_size, input_shape=self.input_shape, padding=padding, name=name, strides = strides, activation=activation, trainable=trainable))
+        self.model.add(Conv2D(num_of_filters, kernel_size=kernel_size, padding=padding, name=name, strides = strides, activation=activation, trainable=trainable))
 
     def append_maxpooling2d_layer(self, pool_size=2, padding="same", strides=2,name=""):
         """
@@ -112,20 +109,24 @@ class CNN(object):
          :return: Weight matrix for the given layer (not including the biases). If the given layer does not have
           weights then None should be returned.
          """
-        if layer_number != None and layer_number > 0:
-            if len(self.model.layers[layer_number].weights) > 0:
-                return self.model.layers[layer_number].weights[0]
-        elif layer_number == -1:
-            if len(self.model.layers[layer_number].weights) > 0:
-                return self.model.layers[layer_number].weights[0]
-        elif layer_name:
-            for layer in self.model.layers:
-                if layer.name == layer_name:
-                    if (len(layer.weights) > 0):
-                       return layer.weights[0]
-                    else:
-                       return None    
-            return None
+        if(layer_number is not None):
+            if(layer_number >= 0):
+                if(layer_number == 0):
+                    return None
+                elif(self.model.get_layer(index = layer_number-1).count_params()==0):
+                    return None
+                else:
+                    return self.model.get_layer(index = layer_number-1).get_weights()[0]
+            else:
+                if(self.model.get_layer(index = layer_number).count_params() == 0):
+                    return None
+                else:
+                    return self.model.get_layer(index = layer_number).get_weights()[0]
+        else:
+            if(self.model.get_layer(name=layer_name).count_params() == 0):
+                return None
+            else:
+                return self.model.get_layer(name = layer_name).get_weights()[0]
 
     def get_biases(self,layer_number=None,layer_name=""):
         """
@@ -136,10 +137,18 @@ class CNN(object):
          :param layer_name: Layer name (if both layer_number and layer_name are specified, layer number takes precedence).
          :return: biases for the given layer (If the given layer does not have bias then None should be returned)
          """
-        if layer_number != None and layer_number != 0:
-            return self.model.layers[layer_number-1].bias
+        if(not layer_number is None):
+            if(layer_number==0):
+                return None
+            elif(self.model.get_layer(index=layer_number-1,name=layer_name).count_params()==0):
+                return None
+            else:
+                return self.model.get_layer(index=layer_number-1,name=layer_name).get_weights()[1]
         else:
-            return None
+            if(self.model.get_layer(name=layer_name).count_params()==0):
+                return None
+            else:
+                return self.model.get_layer(name=layer_name).get_weights()[1]
 
     def set_weights_without_biases(self,weights,layer_number=None,layer_name=""):
         """
@@ -152,8 +161,14 @@ class CNN(object):
          :param layer_name: Layer name (if both layer_number and layer_name are specified, layer number takes precedence).
          :return: None
          """
-        if layer_number != None and layer_number != 0:
-            self.model.layers[layer_number-1].weights.append(weights) 
+        if(not layer_number is None):
+            temp=self.get_biases(layer_number,layer_name)
+            W=[weights,temp]
+            self.model.get_layer(index=layer_number-1,name=layer_name).set_weights(W)
+        else:
+            temp=self.get_biases(layer_number,layer_name)
+            W=[weights,temp]
+            self.model.get_layer(name=layer_name).set_weights(W)
 
     def set_biases(self,biases,layer_number=None,layer_name=""):
         """
@@ -165,15 +180,23 @@ class CNN(object):
         :param layer_name: Layer name (if both layer_number and layer_name are specified, layer number takes precedence).
         :return: none
         """
-        pass
+        if(not layer_number is None):
+            temp=self.get_weights_without_biases(layer_number,layer_name)
+            W=[temp,biases]
+            self.model.get_layer(index=layer_number-1,name=layer_name).set_weights(W)
+        else:
+            temp=self.get_weights_without_biases(layer_number,layer_name)
+            W=[temp,biases]
+            self.model.get_layer(name=layer_name).set_weights(W)
 
     def remove_last_layer(self):
         """
         This function removes a layer from the model.
         :return: removed layer
         """
-        last_layer = self.model.layers.pop()
-        return last_layer
+        layer=self.model.get_layer(index=-1)
+        self. model= Sequential(self.model.layers[:-1])
+        return layer
 
     def load_a_model(self,model_name="",model_file_name=""):
         """
@@ -184,13 +207,12 @@ class CNN(object):
          model_file_name are specified, model_name takes precedence).
         :return: model
         """
-        if (model_name == "VGG16"):
-            self.model = VGG16() 
-        elif(model_name == "VGG19"):
-            self.model = VGG19()
-        elif model_file_name:
-            self.model = load_model(model_file_name)
-            
+        if(model_name=="VGG16"):
+            self. model= Sequential(VGG16().layers)
+        elif(model_name=="VGG19"):
+            self. model= Sequential(VGG19().layers)
+        else:
+            self.model= load_model(model_file_name)
 
     def save_model(self,model_file_name=""):
         """
