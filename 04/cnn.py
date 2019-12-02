@@ -8,6 +8,7 @@
 import tensorflow as tf
 import numpy as np
 import tensorflow.keras as keras
+from tensorflow.keras import Model
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.layers import Dense, Flatten, InputLayer
 from tensorflow.keras.layers import Conv2D, MaxPooling2D
@@ -121,7 +122,9 @@ class CNN(object):
          """
         if(layer_number is not None):
             if(layer_number > 0):
-                    return self.model.get_layer(index = layer_number-1).get_weights()[0]
+                    weights = self.model.get_layer(index = layer_number-1).get_weights()
+                    if len(weights) > 0:
+                        return weights[0]
             elif(layer_number < 0):
                 return self.model.get_layer(index = layer_number).get_weights()[0]
         elif(layer_name != ""):
@@ -141,9 +144,13 @@ class CNN(object):
          """
         if(not layer_number is None):
             if(layer_number > 0):
-                return self.model.get_layer(index=layer_number-1,name=layer_name).get_weights()[1]
+                biases = self.model.get_layer(index=layer_number-1,name=layer_name).get_weights()
+                if len(biases) > 0:
+                    return biases[1]
         elif layer_name != "":
-            return self.model.get_layer(name=layer_name).get_weights()[1]
+            biases = self.model.get_layer(name=layer_name).get_weights()
+            if len(biases) > 0:
+                return biases[1]
 
         return None
     def set_weights_without_biases(self,weights,layer_number=None,layer_name=""):
@@ -186,8 +193,11 @@ class CNN(object):
         This function removes a layer from the model.
         :return: removed layer
         """
-        layer=self.model.get_layer(index=-1)
-        self. model= Sequential(self.model.layers[:-1])
+        # layer=self.model.get_layer(index=-1)
+        # self. model= Sequential(self.model.layers[:-1])
+        # return layer
+        layer=self.model._layers.pop()
+        self.model= Model(self.model.input,self.model.layers[-1].output)
         return layer
 
     def load_a_model(self,model_name="",model_file_name=""):
