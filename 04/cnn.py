@@ -7,13 +7,13 @@
 # %tensorflow_version 2.x
 import tensorflow as tf
 import numpy as np
-import keras
-from keras.models import Sequential, load_model
-from keras import optimizers
-from keras.applications.vgg16 import VGG16
-from keras.applications.vgg19 import VGG19
-from keras.layers import Dense, Dropout, Activation, Flatten
-from keras.layers import Conv2D, MaxPooling2D, InputLayer
+import tensorflow.keras as keras
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.layers import Dense, Flatten, InputLayer
+from tensorflow.keras.layers import Conv2D, MaxPooling2D
+from tensorflow.keras.models import Sequential, load_model
+from tensorflow.keras.applications.vgg19 import VGG19
+from tensorflow.keras.applications.vgg16 import VGG16
 
 class CNN(object):
     def __init__(self):
@@ -34,7 +34,7 @@ class CNN(object):
         self.builtIn = False 
         if shape.__class__ != tuple and shape.__class__ == int:
             shape = (shape,)
-
+        
         if self.model is None:
             self.model = Sequential()
 
@@ -66,7 +66,9 @@ class CNN(object):
          :param trainable: Boolean
          :return: Layer object
          """
-        self.model.add(Conv2D(num_of_filters, kernel_size=kernel_size, padding=padding, name=name, strides = strides, activation=activation, trainable=trainable))
+        conv2D_layer = Conv2D(num_of_filters, kernel_size=kernel_size, padding=padding, name=name, strides = strides, activation=activation, trainable=trainable)
+        self.model.add(conv2D_layer)
+        return conv2D_layer
 
     def append_maxpooling2d_layer(self, pool_size=2, padding="same", strides=2,name=""):
         """
@@ -77,7 +79,9 @@ class CNN(object):
          :param name: Layer name (string)
          :return: Layer object
          """
-        self.model.add(MaxPooling2D(pool_size = pool_size, strides=strides, padding=padding, name=name)) 
+        maxpooling2d_layer = MaxPooling2D(pool_size = pool_size, strides=strides, padding=padding, name=name)
+        self.model.add(maxpooling2d_layer) 
+        return maxpooling2d_layer
 
     def append_flatten_layer(self,name=""):
         """
@@ -85,7 +89,9 @@ class CNN(object):
          :param name: Layer name (string)
          :return: Layer object
          """
-        self.model.add(Flatten(name=name)) 
+        flatten_layer = Flatten(name=name) 
+        self.model.add(flatten_layer)
+        return flatten_layer 
 
     def set_training_flag(self,layer_numbers=[],layer_names="",trainable_flag=True):
         """
@@ -146,14 +152,12 @@ class CNN(object):
          :param layer_name: Layer name (if both layer_number and layer_name are specified, layer number takes precedence).
          :return: None
          """
-        if(not layer_number is None):
-            temp=self.get_biases(layer_number,layer_name)
-            W=[weights,temp]
-            self.model.get_layer(index=layer_number-1,name=layer_name).set_weights(W)
-        else:
-            temp=self.get_biases(layer_number,layer_name)
-            W=[weights,temp]
-            self.model.get_layer(name=layer_name).set_weights(W)
+        if(layer_number is not None):
+            nweights = [weights,self.get_biases(layer_number, "")]
+            self.model.get_layer(index=layer_number-1).set_weights(nweights)
+        elif(layer_name != ""):
+            nweights = [weights,self.get_biases(None,layer_name)]
+            self.model.get_layer(name=layer_name).set_weights(nweights)
 
     def set_biases(self,biases,layer_number=None,layer_name=""):
         """
@@ -165,14 +169,12 @@ class CNN(object):
         :param layer_name: Layer name (if both layer_number and layer_name are specified, layer number takes precedence).
         :return: none
         """
-        if(not layer_number is None):
-            temp=self.get_weights_without_biases(layer_number,layer_name)
-            W=[temp,biases]
-            self.model.get_layer(index=layer_number-1,name=layer_name).set_weights(W)
+        if(layer_number is not None):
+            nbiases = [temp,self.get_weights_without_biases(layer_number,layer_name)]
+            self.model.get_layer(index=layer_number-1,name=layer_name).set_weights(nbiases)
         else:
-            temp=self.get_weights_without_biases(layer_number,layer_name)
-            W=[temp,biases]
-            self.model.get_layer(name=layer_name).set_weights(W)
+            nbiases = [self.get_weights_without_biases(layer_number,layer_name),biases]
+            self.model.get_layer(name=layer_name).set_weights(nbiases)
 
     def remove_last_layer(self):
         """
@@ -197,7 +199,8 @@ class CNN(object):
         elif(model_name=="VGG19"):
             self. model= Sequential(VGG19().layers)
         else:
-            self.model= load_model(model_file_name)
+            self.model = Sequential()
+            self.model = load_model(model_file_name)
 
     def save_model(self,model_file_name=""):
         """
