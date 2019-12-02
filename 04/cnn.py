@@ -38,7 +38,6 @@ class CNN(object):
         if self.model is None:
             self.model = Sequential()
 
-        self.input_shape = shape
         self.model.add(InputLayer(input_shape=shape, name=name))
 
     def append_dense_layer(self, num_nodes,activation="relu",name="",trainable=True):
@@ -78,7 +77,7 @@ class CNN(object):
          :param name: Layer name (string)
          :return: Layer object
          """
-        self.model.add(MaxPooling2D(pool_size = pool_size, strides=strides,padding = padding, name=name)) 
+        self.model.add(MaxPooling2D(pool_size = pool_size, strides=strides, padding=padding, name=name)) 
 
     def append_flatten_layer(self,name=""):
         """
@@ -110,24 +109,16 @@ class CNN(object):
           weights then None should be returned.
          """
         if(layer_number is not None):
-            if(layer_number >= 0):
-                if(layer_number == 0):
-                    return None
-                elif(self.model.get_layer(index = layer_number-1).count_params()==0):
-                    return None
-                else:
+            if(layer_number > 0):
                     return self.model.get_layer(index = layer_number-1).get_weights()[0]
-            else:
-                if(self.model.get_layer(index = layer_number).count_params() == 0):
-                    return None
-                else:
-                    return self.model.get_layer(index = layer_number).get_weights()[0]
-        else:
-            if(self.model.get_layer(name=layer_name).count_params() == 0):
-                return None
-            else:
+            elif(layer_number < 0):
+                return self.model.get_layer(index = layer_number).get_weights()[0]
+        elif(layer_name != ""):
+            if(self.model.get_layer(name=layer_name).count_params() != 0):
                 return self.model.get_layer(name = layer_name).get_weights()[0]
 
+        return None
+        
     def get_biases(self,layer_number=None,layer_name=""):
         """
         This function should return the biases for layer layer_number.
@@ -138,18 +129,12 @@ class CNN(object):
          :return: biases for the given layer (If the given layer does not have bias then None should be returned)
          """
         if(not layer_number is None):
-            if(layer_number==0):
-                return None
-            elif(self.model.get_layer(index=layer_number-1,name=layer_name).count_params()==0):
-                return None
-            else:
+            if(layer_number > 0):
                 return self.model.get_layer(index=layer_number-1,name=layer_name).get_weights()[1]
-        else:
-            if(self.model.get_layer(name=layer_name).count_params()==0):
-                return None
-            else:
-                return self.model.get_layer(name=layer_name).get_weights()[1]
+        elif layer_name != "":
+            return self.model.get_layer(name=layer_name).get_weights()[1]
 
+        return None
     def set_weights_without_biases(self,weights,layer_number=None,layer_name=""):
         """
         This function sets the weight matrix for layer layer_number.
